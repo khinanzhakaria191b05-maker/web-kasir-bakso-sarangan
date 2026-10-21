@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Admin') - Mie Ayam Bakso Sarangan</title>
+    <title>@yield('title', 'Admin') - {{ $shopName }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
@@ -34,7 +34,7 @@
             <button class="btn" data-bs-toggle="offcanvas" data-bs-target="#sidebar">
                 <i class="bi bi-list fs-3"></i>
             </button>
-            <span class="fw-bold">Sarangan</span>
+            <span class="fw-bold text-truncate">{{ $shopName }}</span>
         </div>
     </nav>
 
@@ -46,7 +46,7 @@
                 <button class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar"></button>
             </div>
             <div class="offcanvas-body d-flex flex-column p-3">
-                <h5 class="fw-bold text-success mb-4 d-none d-lg-block">Mie Ayam Bakso<br>Sarangan</h5>
+                <h5 class="fw-bold text-success mb-4 d-none d-lg-block">{{ $shopName }}</h5>
 
                 <ul class="nav nav-pills flex-column gap-1 mb-auto">
                     <li><a href="{{ route('admin.dashboard') }}" class="nav-link text-dark {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
@@ -54,6 +54,8 @@
                     <li><a href="{{ route('admin.categories.index') }}" class="nav-link text-dark {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}"><i class="bi bi-tags me-2"></i>Kategori</a></li>
                     <li><a href="{{ route('admin.options.index') }}" class="nav-link text-dark {{ request()->routeIs('admin.options.*') ? 'active' : '' }}"><i class="bi bi-sliders me-2"></i>Varian & Topping</a></li>
                     <li><a href="{{ route('admin.users.index') }}" class="nav-link text-dark {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="bi bi-people me-2"></i>Kelola Pengguna</a></li>
+                    <li><a href="{{ route('admin.settings.edit') }}" class="nav-link text-dark {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"><i class="bi bi-gear me-2"></i>Pengaturan</a></li>
+                    <li><a href="{{ route('admin.transactions.index') }}" class="nav-link text-dark {{ request()->routeIs('admin.transactions.*') ? 'active' : '' }}"><i class="bi bi-clock-history me-2"></i>Riwayat Transaksi</a></li>
                     <li><a href="{{ route('kasir') }}" class="nav-link text-dark"><i class="bi bi-cash-register me-2"></i>Layar Kasir</a></li>
                 </ul>
 

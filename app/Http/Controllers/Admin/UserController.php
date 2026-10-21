@@ -26,6 +26,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name'     => 'required|string|max:100',
             'username' => 'required|alpha_dash|max:50|unique:users,username',
+            'email'    => 'required|email|max:100|unique:users,email',
             'role'     => 'required|in:admin,kasir',
             'password' => 'required|string|min:6',
         ]);
@@ -33,7 +34,7 @@ class UserController extends Controller
         User::create([
             'name'      => $data['name'],
             'username'  => $data['username'],
-            'email'     => $data['username'] . '@sarangan.local', // kolom email wajib & unik
+            'email'     => $data['email'],
             'role'      => $data['role'],
             'password'  => Hash::make($data['password']),
             'is_active' => true,
@@ -52,17 +53,18 @@ class UserController extends Controller
         $data = $request->validate([
             'name'     => 'required|string|max:100',
             'username' => ['required', 'alpha_dash', 'max:50', Rule::unique('users', 'username')->ignore($user->id)],
+            'email'    => ['required', 'email', 'max:100', Rule::unique('users', 'email')->ignore($user->id)],
             'role'     => 'required|in:admin,kasir',
-            'password' => 'nullable|string|min:6', // kosong = tidak diubah
+            'password' => 'nullable|string|min:6',
         ]);
 
-        // Admin tidak boleh menurunkan role dirinya sendiri
         if ($user->id === $request->user()->id && $data['role'] !== 'admin') {
             return back()->with('error', 'Kamu tidak bisa menurunkan role akunmu sendiri.');
         }
 
         $user->name = $data['name'];
         $user->username = $data['username'];
+        $user->email = $data['email'];
         $user->role = $data['role'];
 
         if (!empty($data['password'])) {

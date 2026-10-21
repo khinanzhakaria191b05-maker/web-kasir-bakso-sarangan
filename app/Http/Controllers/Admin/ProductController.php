@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Models\ProductOption;
 
 class ProductController extends Controller
 {
@@ -68,6 +68,21 @@ class ProductController extends Controller
         $product->options()->sync($optionIds);
 
         return redirect()->route('admin.products.index')->with('success', 'Menu diperbarui.');
+    }
+
+    public function destroy(Product $product)
+    {
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
+        $product->delete();
+        return back()->with('success', 'Menu dihapus.');
+    }
+
+    public function toggle(Product $product)
+    {
+        $product->update(['is_available' => !$product->is_available]);
+        return back();
     }
 
     private function validated(Request $request): array

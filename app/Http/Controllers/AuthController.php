@@ -19,16 +19,19 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::attempt([...$cred, 'is_active' => true])) {
+        // Kalau yang diketik berbentuk email, cocokkan ke kolom email
+        $field = filter_var($cred['username'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        if (Auth::attempt([$field => $cred['username'], 'password' => $cred['password'], 'is_active' => true])) {
             $request->session()->regenerate();
 
             return Auth::user()->role === 'admin'
                 ? redirect()->route('admin.dashboard')
-                : redirect()->route('kasir');   // sebelumnya 'pos'
+                : redirect()->route('kasir');
         }
 
         return back()->withErrors([
-            'username' => 'Username/password salah atau akun nonaktif.',
+            'username' => 'Username/email atau password salah, atau akun nonaktif.',
         ]);
     }
 

@@ -13,6 +13,7 @@
                 <tr>
                     <th>Nama</th>
                     <th>Username</th>
+                    <th>Email</th>
                     <th>Role</th>
                     <th>Status</th>
                     <th class="text-end">Aksi</th>
@@ -26,6 +27,7 @@
                         @if($u->id === auth()->id()) <span class="badge text-bg-light border">Kamu</span> @endif
                     </td>
                     <td>{{ $u->username }}</td>
+                    <td>{{ $u->email }}</td>
                     <td>
                         <span class="badge {{ $u->role === 'admin' ? 'text-bg-danger' : 'text-bg-primary' }}">{{ ucfirst($u->role) }}</span>
                     </td>

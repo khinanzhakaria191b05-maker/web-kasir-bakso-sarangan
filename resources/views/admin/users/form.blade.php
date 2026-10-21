@@ -21,6 +21,12 @@
     </div>
 
     <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" value="{{ old('email', $user->email) }}" class="form-control @error('email') is-invalid @enderror" placeholder="nama@email.com" required>
+        @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    </div>
+
+    <div class="mb-3">
         <label class="form-label">Role</label>
         <select name="role" class="form-select @error('role') is-invalid @enderror">
             <option value="kasir" @selected(old('role', $user->role) === 'kasir')>Kasir</option>

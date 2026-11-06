@@ -133,9 +133,20 @@
                 <input type="text" id="tableNo" class="form-control mb-2" placeholder="Nomor meja (wajib)">
                 <textarea id="orderNote" class="form-control mb-2" rows="2" placeholder="Catatan khusus (mis. kuah dipisah)"></textarea>
 
-                <div class="d-flex justify-content-between fs-5 fw-bold mb-2">
-                    <span>Subtotal</span><span id="subtotal">Rp 0</span>
+                <div class="input-group input-group-sm mb-2">
+                    <span class="input-group-text">Diskon</span>
+                    <select id="discType" class="form-select" style="max-width:80px">
+                        <option value="nominal">Rp</option>
+                        <option value="percent">%</option>
+                    </select>
+                    <input type="number" id="discValue" min="0" class="form-control" placeholder="0">
                 </div>
+
+                <div class="d-flex justify-content-between small"><span>Subtotal</span><span id="subtotal">Rp 0</span></div>
+                <div class="d-flex justify-content-between small text-danger d-none" id="rowDisc"><span>Diskon</span><span id="discAmt">- Rp 0</span></div>
+                <div class="d-flex justify-content-between small d-none" id="rowTax"><span id="taxLabel">PPN</span><span id="taxAmt">Rp 0</span></div>
+                <div class="d-flex justify-content-between fs-5 fw-bold mb-2 border-top pt-1"><span>Total</span><span id="grandTotal">Rp 0</span></div>
+
                 <button class="btn btn-success btn-lg w-100 fw-bold" onclick="bayar()">BAYAR</button>
             </div>
         </aside>
@@ -233,6 +244,8 @@
     <script>
         const PRODUCTS = @json($products);
         const CATS = @json($categories);
+        const TAX_ENABLED = @json($taxEnabled);
+        const TAX_RATE = @json($taxRate);
 
         const rp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
         const esc = s => String(s).replace(/[&<>"']/g, c => ({
@@ -342,6 +355,41 @@
         const keyOf = (p, opts) => p.id + ':' + opts.map(o => o.id).sort((a, b) => a - b).join(',');
         const unitPrice = it => it.product.price + it.options.reduce((s, o) => s + o.price, 0);
 
+        function calc() {
+            const sub = cart.reduce((s, it) => s + unitPrice(it) * it.qty, 0);
+            const type = $('discType').value;
+            let val = Math.max(0, +$('discValue').value || 0);
+            if (type === 'percent') val = Math.min(val, 100);
+
+            let disc = type === 'percent' ? Math.round(sub * val / 100) : Math.round(val);
+            disc = Math.min(disc, sub);
+
+            const base = sub - disc;
+            const tax = TAX_ENABLED ? Math.round(base * TAX_RATE / 100) : 0;
+            return {
+                sub,
+                disc,
+                tax,
+                total: base + tax
+            };
+        }
+
+        function updateTotals() {
+            const c = calc();
+            const qty = cart.reduce((s, it) => s + it.qty, 0);
+            $('subtotal').textContent = rp(c.sub);
+            $('rowDisc').classList.toggle('d-none', c.disc <= 0);
+            $('discAmt').textContent = '- ' + rp(c.disc);
+            $('rowTax').classList.toggle('d-none', !TAX_ENABLED);
+            $('taxLabel').textContent = 'PPN ' + TAX_RATE + '%';
+            $('taxAmt').textContent = rp(c.tax);
+            $('grandTotal').textContent = rp(c.total);
+            $('badgeTotal').textContent = rp(c.total);
+            $('badgeQty').textContent = qty;
+        }
+        $('discType').addEventListener('change', updateTotals);
+        $('discValue').addEventListener('input', updateTotals);
+
         function addToCart(p, opts) {
             const key = keyOf(p, opts);
             const found = cart.find(c => c.key === key);
@@ -409,11 +457,7 @@
         </div>
       </div>`).join('') : '<div class="text-center text-muted py-5">Belum ada pesanan.<br>Klik menu untuk menambah.</div>';
 
-            const total = cart.reduce((s, it) => s + unitPrice(it) * it.qty, 0);
-            const qty = cart.reduce((s, it) => s + it.qty, 0);
-            $('subtotal').textContent = rp(total);
-            $('badgeTotal').textContent = rp(total);
-            $('badgeQty').textContent = qty;
+            updateTotals();
         }
 
         /* ---------- Tipe pesanan ---------- */
@@ -440,7 +484,7 @@
             const dine = document.querySelector('input[name=order_type]:checked').value === 'dine_in';
             if (dine && !$('tableNo').value.trim()) return alert('Nomor meja wajib diisi untuk Makan di Sini.');
 
-            payTotal = cartTotal();
+            payTotal = calc().total;
             $('payTotal').textContent = rp(payTotal);
             $('cashIn').value = '';
             $('mTunai').checked = true;
@@ -476,26 +520,28 @@
             btn.disabled = true;
 
             try {
-              const res = await fetch('{{ url('/kasir/order') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                        },
-                        body: JSON.stringify({
-                            order_type: document.querySelector('input[name=order_type]:checked').value,
-                            table_number: $('tableNo').value.trim(),
-                            note: $('orderNote').value.trim(),
-                            payment_method: method,
-                            cash_received: method === 'tunai' ? cash : null,
-                            items: cart.map(it => ({
-                                product_id: it.product.id,
-                                qty: it.qty,
-                                option_ids: it.options.map(o => o.id),
-                            })),
-                        }),
-                    });
+                const res = await fetch('{{ url(' / kasir / order ') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                    },
+                    body: JSON.stringify({
+                        order_type: document.querySelector('input[name=order_type]:checked').value,
+                        table_number: $('tableNo').value.trim(),
+                        note: $('orderNote').value.trim(),
+                        discount_type: $('discType').value,
+                        discount_value: +$('discValue').value || 0,
+                        payment_method: method,
+                        cash_received: method === 'tunai' ? cash : null,
+                        items: cart.map(it => ({
+                            product_id: it.product.id,
+                            qty: it.qty,
+                            option_ids: it.options.map(o => o.id),
+                        })),
+                    }),
+                });
 
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message || 'Gagal menyimpan transaksi.');
@@ -511,6 +557,8 @@
                 cart = [];
                 $('tableNo').value = '';
                 $('orderNote').value = '';
+                $('discValue').value = '';
+                $('discType').value = 'nominal';
                 renderCart();
                 reprint();
             } catch (e) {

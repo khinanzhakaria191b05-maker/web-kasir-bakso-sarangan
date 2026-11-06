@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Setting;
 
 class OrderController extends Controller
 {
@@ -17,6 +18,8 @@ class OrderController extends Controller
             'note'                 => 'nullable|string|max:500',
             'payment_method'       => 'required|in:tunai,qris',
             'cash_received'        => 'nullable|integer|min:0',
+            'discount_type'        => 'nullable|in:nominal,percent',
+            'discount_value'       => 'nullable|numeric|min:0',
             'items'                => 'required|array|min:1',
             'items.*.product_id'   => 'required|exists:products,id',
             'items.*.qty'          => 'required|integer|min:1|max:99',
@@ -25,7 +28,7 @@ class OrderController extends Controller
         ]);
 
         $order = DB::transaction(function () use ($data, $request) {
-            $total = 0;
+            $subtotal = 0;
             $rows = [];
 
             foreach ($data['items'] as $row) {
@@ -35,10 +38,9 @@ class OrderController extends Controller
                     abort(422, "Menu {$product->name} sedang habis.");
                 }
 
-                // Hanya opsi yang memang tertaut ke menu ini yang diterima
                 $opts = $product->options->whereIn('id', $row['option_ids'] ?? [])->values();
                 $unit = $product->price + $opts->sum('price');
-                $total += $unit * $row['qty'];
+                $subtotal += $unit * $row['qty'];
 
                 $rows[] = [
                     'product_id'   => $product->id,
@@ -48,6 +50,25 @@ class OrderController extends Controller
                     'options'      => $opts->map(fn($o) => ['name' => $o->name, 'price' => $o->price])->all(),
                 ];
             }
+
+            // Diskon
+            $discType  = $data['discount_type'] ?? 'nominal';
+            $discValue = (float) ($data['discount_value'] ?? 0);
+            if ($discType === 'percent') {
+                $discValue = min($discValue, 100);
+            }
+            $discount = $discType === 'percent'
+                ? (int) round($subtotal * $discValue / 100)
+                : (int) round($discValue);
+            $discount = min($discount, $subtotal);
+            $base = $subtotal - $discount;
+
+            // PPN (dari pengaturan admin)
+            $taxEnabled = Setting::get('tax_enabled', '0') === '1';
+            $taxRate    = $taxEnabled ? (float) Setting::get('tax_rate', 11) : 0;
+            $tax        = (int) round($base * $taxRate / 100);
+
+            $total = $base + $tax;
 
             $cash = null;
             $change = null;
@@ -59,20 +80,25 @@ class OrderController extends Controller
                 $change = $cash - $total;
             }
 
-            // Nomor invoice: INV + tanggal + urutan harian
             $seq = Order::whereDate('created_at', today())->lockForUpdate()->count() + 1;
             $invoice = 'INV' . now()->format('ymd') . '-' . str_pad($seq, 4, '0', STR_PAD_LEFT);
 
             $order = Order::create([
-                'invoice_no'     => $invoice,
-                'user_id'        => $request->user()->id,
-                'order_type'     => $data['order_type'],
-                'table_number'   => $data['order_type'] === 'dine_in' ? $data['table_number'] : null,
-                'note'           => $data['note'] ?? null,
-                'total'          => $total,
-                'payment_method' => $data['payment_method'],
-                'cash_received'  => $cash,
-                'change_amount'  => $change,
+                'invoice_no'      => $invoice,
+                'user_id'         => $request->user()->id,
+                'order_type'      => $data['order_type'],
+                'table_number'    => $data['order_type'] === 'dine_in' ? $data['table_number'] : null,
+                'note'            => $data['note'] ?? null,
+                'subtotal'        => $subtotal,
+                'discount_type'   => $discount > 0 ? $discType : null,
+                'discount_value'  => $discount > 0 ? $discValue : 0,
+                'discount_amount' => $discount,
+                'tax_rate'        => $taxRate,
+                'tax_amount'      => $tax,
+                'total'           => $total,
+                'payment_method'  => $data['payment_method'],
+                'cash_received'   => $cash,
+                'change_amount'   => $change,
             ]);
 
             $order->items()->createMany($rows);

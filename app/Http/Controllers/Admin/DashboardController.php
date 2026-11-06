@@ -27,6 +27,8 @@ class DashboardController extends Controller
         $trx   = (clone $orders)->count();
         $tunai = (clone $orders)->where('payment_method', 'tunai')->sum('total');
         $qris  = (clone $orders)->where('payment_method', 'qris')->sum('total');
+        $diskon = (clone $orders)->sum('discount_amount');
+        $ppn    = (clone $orders)->sum('tax_amount');
 
         $porsi = OrderItem::join('orders', 'orders.id', '=', 'order_items.order_id')
             ->where('orders.status', 'selesai')
@@ -62,7 +64,9 @@ class DashboardController extends Controller
             'tunai',
             'qris',
             'harian',
-            'terlaris'
+            'terlaris',
+            'diskon',
+            'ppn'
         ));
     }
 }

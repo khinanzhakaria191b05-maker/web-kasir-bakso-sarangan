@@ -83,6 +83,22 @@
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
+                            <td colspan="3" class="text-end">Subtotal</td>
+                            <td class="text-end">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</td>
+                        </tr>
+                        @if($order->discount_amount > 0)
+                        <tr class="text-danger">
+                            <td colspan="3" class="text-end">Diskon</td>
+                            <td class="text-end">- Rp {{ number_format($order->discount_amount, 0, ',', '.') }}</td>
+                        </tr>
+                        @endif
+                        @if($order->tax_amount > 0)
+                        <tr>
+                            <td colspan="3" class="text-end">PPN {{ rtrim(rtrim(number_format($order->tax_rate, 2, '.', ''), '0'), '.') }}%</td>
+                            <td class="text-end">Rp {{ number_format($order->tax_amount, 0, ',', '.') }}</td>
+                        </tr>
+                        @endif
+                        <tr>
                             <th colspan="3" class="text-end">Total</th>
                             <th class="text-end">Rp {{ number_format($order->total, 0, ',', '.') }}</th>
                         </tr>

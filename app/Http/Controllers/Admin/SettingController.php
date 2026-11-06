@@ -21,12 +21,16 @@ class SettingController extends Controller
             'shop_address'   => 'nullable|string|max:200',
             'shop_phone'     => 'nullable|string|max:30',
             'receipt_footer' => 'nullable|string|max:200',
+            'tax_rate'       => 'nullable|numeric|min:0|max:100',
             'qris_image'     => 'nullable|image|max:3072',
         ]);
 
         foreach (['shop_name', 'shop_address', 'shop_phone', 'receipt_footer'] as $key) {
             Setting::put($key, $data[$key] ?? null);
         }
+
+        Setting::put('tax_enabled', $request->boolean('tax_enabled') ? '1' : '0');
+        Setting::put('tax_rate', $data['tax_rate'] ?? 11);
 
         if ($request->hasFile('qris_image')) {
             if ($old = Setting::get('qris_image')) {

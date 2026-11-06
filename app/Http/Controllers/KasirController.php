@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Setting;
 
 class KasirController extends Controller
 {
@@ -26,6 +27,9 @@ class KasirController extends Controller
             ])->values(),
         ]);
 
-        return view('kasir.index', compact('categories', 'products'));
+        $taxEnabled = Setting::get('tax_enabled', '0') === '1';
+        $taxRate    = (float) Setting::get('tax_rate', 11);
+
+        return view('kasir.index', compact('categories', 'products', 'taxEnabled', 'taxRate'));
     }
 }

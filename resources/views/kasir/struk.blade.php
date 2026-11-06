@@ -80,7 +80,23 @@
     @endforeach
 
     <hr>
+    @if($order->discount_amount > 0 || $order->tax_amount > 0)
+    <div class="row"><span>Subtotal</span><span>Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span></div>
+    @if($order->discount_amount > 0)
+    <div class="row">
+        <span>Diskon{{ $order->discount_type === 'percent' ? ' ('.rtrim(rtrim(number_format($order->discount_value, 2, '.', ''), '0'), '.').'%)' : '' }}</span>
+        <span>- {{ number_format($order->discount_amount, 0, ',', '.') }}</span>
+    </div>
+    @endif
+    @if($order->tax_amount > 0)
+    <div class="row">
+        <span>PPN {{ rtrim(rtrim(number_format($order->tax_rate, 2, '.', ''), '0'), '.') }}%</span>
+        <span>{{ number_format($order->tax_amount, 0, ',', '.') }}</span>
+    </div>
+    @endif
+    @endif
     <div class="row"><strong>TOTAL</strong><strong>Rp {{ number_format($order->total, 0, ',', '.') }}</strong></div>
+
     <div class="row"><span>Bayar</span><span>{{ $order->payment_method === 'tunai' ? 'Tunai' : 'QRIS/Transfer' }}</span></div>
     @if($order->payment_method === 'tunai')
     <div class="row"><span>Diterima</span><span>Rp {{ number_format($order->cash_received, 0, ',', '.') }}</span></div>

@@ -31,6 +31,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('transactions/{order}', [TransactionController::class, 'show'])->name('transactions.show');
+    Route::get('transactions/{order}/pdf', [TransactionController::class, 'pdf'])->name('transactions.pdf');
     Route::patch('transactions/{order}/void', [TransactionController::class, 'void'])->name('transactions.void');
 
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);

@@ -2,305 +2,523 @@
 <html lang="id">
 
 <head>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="order-url" content="{{ route('kasir.order.store') }}">
     <title>Kasir - {{ $shopName }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
+        :root {
+            --ink: #1f2d27;
+            --muted: #6c757d;
+            --line: #e9ecef;
+            --brand: #198754;
+            --brand-dark: #146c43;
+        }
+
         body {
-            background: #f1f3f5;
+            background: #f5f7f6;
+            color: var(--ink);
+        }
+
+        .topbar {
+            height: 56px;
+            background: #fff;
+            border-bottom: 1px solid var(--line);
         }
 
         .pos-wrap {
             height: calc(100vh - 56px);
         }
 
+        /* Kiri: menu */
         .menu-pane {
             flex: 1;
+            min-width: 0;
             min-height: 0;
             display: flex;
             flex-direction: column;
-            padding: 12px;
+            padding: 14px;
         }
 
         .menu-grid {
             flex: 1;
             overflow-y: auto;
-            padding-bottom: 80px;
+            padding: 2px 2px 90px;
         }
 
-        .menu-card {
-            cursor: pointer;
-            transition: transform .1s;
-        }
-
-        .menu-card:active {
-            transform: scale(.97);
-        }
-
-        .menu-card.habis {
-            opacity: .4;
-            pointer-events: none;
-        }
-
-        .menu-img {
-            height: 100px;
-            width: 100%;
-            object-fit: cover;
+        @media (min-width: 992px) {
+            .menu-grid {
+                padding-bottom: 8px;
+            }
         }
 
         .cat-scroll {
             overflow-x: auto;
             white-space: nowrap;
+            padding-bottom: 4px;
+        }
+
+        .cat-btn {
+            border: 1px solid #cfd8d2;
+            background: #fff;
+            color: #495057;
+            border-radius: 99px;
+            padding: 5px 14px;
+            font-size: .9rem;
+            margin-right: 6px;
+        }
+
+        .cat-btn.on {
+            background: var(--brand);
+            border-color: var(--brand);
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .menu-card {
+            position: relative;
+            cursor: pointer;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+            height: 100%;
+            transition: border-color .12s, box-shadow .12s;
+        }
+
+        .menu-card:hover {
+            border-color: var(--brand);
+            box-shadow: 0 2px 8px rgba(25, 135, 84, .15);
+        }
+
+        .menu-card:active {
+            transform: scale(.98);
+        }
+
+        .menu-card.habis {
+            opacity: .45;
+            pointer-events: none;
+        }
+
+        .menu-img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            background: #eef0ed;
+        }
+
+        .menu-info {
+            padding: 8px 10px 10px;
+        }
+
+        .menu-name {
+            font-size: .9rem;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+
+        .menu-price {
+            color: var(--brand-dark);
+            font-weight: 600;
+            font-size: .9rem;
+            margin-top: 2px;
+        }
+
+        .qty-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            min-width: 26px;
+            height: 26px;
+            padding: 0 7px;
+            border-radius: 99px;
+            background: var(--brand);
+            color: #fff;
+            font-size: .8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+        }
+
+        /* Kanan: pesanan */
+        .cart-pane {
+            background: #fff;
+        }
+
+        @media (min-width: 992px) {
+            .cart-pane {
+                flex: 0 0 380px;
+                border-left: 1px solid var(--line);
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .cart-pane {
+                flex-basis: 420px;
+            }
         }
 
         .cart-list {
             flex: 1;
             min-height: 0;
             overflow-y: auto;
+            padding: 0 16px;
         }
 
-        @media (min-width: 992px) {
-            .menu-pane {
-                flex: 0 0 65%;
-            }
+        .cart-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--line);
+        }
 
-            .menu-grid {
-                padding-bottom: 0;
-            }
+        .qty-ctl .btn {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-            .cart-pane {
-                flex: 0 0 35% !important;
-                background: #fff !important;
-                border-left: 1px solid #dee2e6 !important;
-            }
+        .cart-foot {
+            background: #f8faf9;
+            border-top: 1px solid var(--line);
+            padding: 14px 16px;
+        }
+
+        .sum-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: .92rem;
+            padding: 2px 0;
+        }
+
+        .sum-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 1.35rem;
+            font-weight: 700;
+            border-top: 1px solid #d5ddd8;
+            margin-top: 6px;
+            padding-top: 8px;
+        }
+
+        .btn-brand {
+            background: var(--brand);
+            border-color: var(--brand);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .btn-brand:hover {
+            background: var(--brand-dark);
+            border-color: var(--brand-dark);
+            color: #fff;
+        }
+
+        .btn-check:checked+.btn-outline-success {
+            background: var(--brand);
+            border-color: var(--brand);
+            color: #fff;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--brand);
+            border-color: var(--brand);
+        }
+
+        .btn,
+        .form-control,
+        .form-select {
+            border-radius: 8px;
         }
     </style>
 </head>
 
 <body>
 
-    <nav class="navbar bg-white border-bottom" style="height:56px">
-        <div class="container-fluid">
-            <span class="navbar-brand fw-bold text-success mb-0 text-truncate" style="max-width:40vw">{{ $shopName }}</span>
-            <div class="d-flex align-items-center gap-2">
-                <span class="small text-muted d-none d-sm-inline">
-                    <i class="bi bi-person-circle me-1"></i>{{ auth()->user()->name }} ({{ ucfirst(auth()->user()->role) }})
-                </span>
-                @if(auth()->user()->role === 'admin')
-                <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">Panel Admin</a>
-                @endif
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button class="btn btn-sm btn-outline-danger">Logout</button>
-                </form>
-            </div>
+    {{-- Header --}}
+    <nav class="topbar d-flex align-items-center justify-content-between px-3">
+        <div class="d-flex align-items-center gap-2 overflow-hidden">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-3 text-white flex-shrink-0"
+                style="width:34px;height:34px;background:var(--brand)"><i class="bi bi-shop"></i></span>
+            <span class="fw-semibold text-truncate" style="max-width:42vw">{{ $shopName }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="small text-muted d-none d-sm-inline">
+                <i class="bi bi-person-circle me-1"></i>{{ auth()->user()->name }} ({{ ucfirst(auth()->user()->role) }})
+            </span>
+            @if(auth()->user()->role === 'admin')
+            <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">Panel admin</a>
+            @endif
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button class="btn btn-sm btn-outline-danger">Keluar</button>
+            </form>
         </div>
     </nav>
 
     <div class="pos-wrap d-flex flex-column flex-lg-row">
 
-        {{-- KIRI: katalog menu --}}
+        {{-- Kiri: katalog menu --}}
         <section class="menu-pane">
-            <input type="search" id="search" class="form-control mb-2" placeholder="Cari menu...">
-            <div class="cat-scroll mb-2 pb-1" id="catTabs"></div>
+            <div class="position-relative mb-2">
+                <i class="bi bi-search position-absolute top-50 translate-middle-y text-muted" style="left:12px"></i>
+                <input type="search" id="search" class="form-control" style="padding-left:36px" placeholder="Cari menu">
+            </div>
+            <div class="cat-scroll mb-2" id="catTabs"></div>
             <div class="menu-grid">
                 <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2" id="menuGrid"></div>
             </div>
         </section>
 
-        {{-- KANAN: keranjang (di HP jadi panel tarik dari bawah) --}}
-        <aside class="offcanvas-lg offcanvas-bottom cart-pane d-flex flex-column" id="cartPanel" tabindex="-1" style="height:85vh">
-            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-                <h5 class="mb-0"><i class="bi bi-receipt me-1"></i>Pesanan</h5>
-                <div>
-                    <button class="btn btn-sm btn-outline-danger" onclick="clearCart()">Kosongkan</button>
-                    <button class="btn-close d-lg-none ms-2" data-bs-dismiss="offcanvas" data-bs-target="#cartPanel"></button>
+        {{-- Kanan: pesanan (di HP jadi panel dari bawah) --}}
+        <aside class="offcanvas-lg offcanvas-bottom cart-pane d-flex flex-column" id="cartPanel" tabindex="-1" style="height:88vh">
+            <div class="d-flex justify-content-between align-items-center px-3 py-3 border-bottom">
+                <h2 class="h6 fw-semibold mb-0">Pesanan <span class="text-muted fw-normal" id="cartCount"></span></h2>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-danger" id="btnClear">Kosongkan</button>
+                    <button class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#cartPanel" aria-label="Tutup"></button>
                 </div>
             </div>
 
-            <div class="cart-list px-3" id="cartList"></div>
+            <div class="cart-list" id="cartList"></div>
 
-            <div class="p-3 border-top">
+            <div class="cart-foot">
                 <div class="btn-group w-100 mb-2">
                     <input type="radio" class="btn-check" name="order_type" id="tDine" value="dine_in" checked>
-                    <label class="btn btn-outline-success" for="tDine">Makan di Sini</label>
+                    <label class="btn btn-outline-success" for="tDine">Makan di sini</label>
                     <input type="radio" class="btn-check" name="order_type" id="tTake" value="takeaway">
                     <label class="btn btn-outline-success" for="tTake">Bungkus</label>
                 </div>
                 <input type="text" id="tableNo" class="form-control mb-2" placeholder="Nomor meja (wajib)">
-                <textarea id="orderNote" class="form-control mb-2" rows="2" placeholder="Catatan khusus (mis. kuah dipisah)"></textarea>
+                <input type="text" id="orderNote" class="form-control mb-2" placeholder="Catatan, misalnya kuah dipisah">
 
-                <div class="input-group input-group-sm mb-2">
+                <div class="input-group mb-3">
                     <span class="input-group-text">Diskon</span>
-                    <select id="discType" class="form-select" style="max-width:80px">
+                    <select id="discType" class="form-select" style="max-width:84px">
                         <option value="nominal">Rp</option>
                         <option value="percent">%</option>
                     </select>
                     <input type="number" id="discValue" min="0" class="form-control" placeholder="0">
                 </div>
 
-                <div class="d-flex justify-content-between small"><span>Subtotal</span><span id="subtotal">Rp 0</span></div>
-                <div class="d-flex justify-content-between small text-danger d-none" id="rowDisc"><span>Diskon</span><span id="discAmt">- Rp 0</span></div>
-                <div class="d-flex justify-content-between small d-none" id="rowTax"><span id="taxLabel">PPN</span><span id="taxAmt">Rp 0</span></div>
-                <div class="d-flex justify-content-between fs-5 fw-bold mb-2 border-top pt-1"><span>Total</span><span id="grandTotal">Rp 0</span></div>
+                <div class="sum-row"><span class="text-muted">Subtotal</span><span id="subtotal">Rp 0</span></div>
+                <div class="sum-row text-danger d-none" id="rowDisc"><span>Diskon</span><span id="discAmt">- Rp 0</span></div>
+                <div class="sum-row d-none" id="rowTax"><span class="text-muted" id="taxLabel">PPN</span><span id="taxAmt">Rp 0</span></div>
+                <div class="sum-total"><span>Total</span><span id="grandTotal">Rp 0</span></div>
 
-                <button class="btn btn-success btn-lg w-100 fw-bold" onclick="bayar()">BAYAR</button>
+                <button class="btn btn-brand btn-lg w-100 mt-3" id="btnBayar">Bayar</button>
             </div>
         </aside>
     </div>
 
     {{-- Tombol keranjang melayang (HP) --}}
-    <button class="btn btn-success btn-lg shadow position-fixed bottom-0 start-0 end-0 m-3 d-lg-none"
+    <button class="btn btn-brand btn-lg shadow position-fixed bottom-0 start-0 end-0 m-3 d-lg-none"
         data-bs-toggle="offcanvas" data-bs-target="#cartPanel">
-        <i class="bi bi-cart3 me-1"></i> Keranjang (<span id="badgeQty">0</span>) · <span id="badgeTotal">Rp 0</span>
+        <i class="bi bi-cart3 me-1"></i>Pesanan (<span id="badgeQty">0</span>) &nbsp;|&nbsp; <span id="badgeTotal">Rp 0</span>
     </button>
 
-    {{-- Pop-up varian & topping --}}
-    <div class="modal fade" id="optModal" tabindex="-1">
+    {{-- Jendela varian dan topping --}}
+    <div class="modal fade" id="optModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="optTitle"></h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <h2 class="modal-title h6 fw-semibold" id="optTitle"></h2>
+                    <button class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body" id="optBody"></div>
                 <div class="modal-footer">
-                    <button class="btn btn-success w-100" id="optSave"></button>
+                    <button class="btn btn-brand w-100" id="optSave"></button>
                 </div>
             </div>
         </div>
     </div>
-    {{-- Pop-up pembayaran --}}
-    <div class="modal fade" id="payModal" tabindex="-1" data-bs-backdrop="static">
+
+    {{-- Jendela pembayaran --}}
+    <div class="modal fade" id="payModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Pembayaran</h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <h2 class="modal-title h6 fw-semibold">Pembayaran</h2>
+                    <button class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body">
                     <div class="text-center mb-3">
-                        <div class="text-muted">Total Bayar</div>
-                        <div class="display-6 fw-bold text-success" id="payTotal"></div>
+                        <div class="text-muted small">Total bayar</div>
+                        <div class="display-6 fw-bold text-success" id="payTotalText"></div>
                     </div>
 
                     <div class="btn-group w-100 mb-3">
                         <input type="radio" class="btn-check" name="pay_method" id="mTunai" value="tunai" checked>
                         <label class="btn btn-outline-success" for="mTunai"><i class="bi bi-cash-coin me-1"></i>Tunai</label>
                         <input type="radio" class="btn-check" name="pay_method" id="mQris" value="qris">
-                        <label class="btn btn-outline-success" for="mQris"><i class="bi bi-qr-code me-1"></i>QRIS / Transfer</label>
+                        <label class="btn btn-outline-success" for="mQris"><i class="bi bi-qr-code me-1"></i>QRIS / transfer</label>
                     </div>
 
                     <div id="boxTunai">
-                        <label class="form-label">Uang Diterima</label>
+                        <label class="form-label">Uang diterima</label>
                         <input type="number" id="cashIn" min="0" class="form-control form-control-lg mb-2" placeholder="0">
                         <div class="d-flex flex-wrap gap-1 mb-3">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setCash(payTotal)">Uang Pas</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setCash(20000)">20rb</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setCash(50000)">50rb</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setCash(100000)">100rb</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-cash="pas">Uang pas</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-cash="20000">20rb</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-cash="50000">50rb</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-cash="100000">100rb</button>
                         </div>
-                        <div class="d-flex justify-content-between fs-5">
+                        <div class="d-flex justify-content-between align-items-baseline fs-5 p-2 rounded" style="background:#f1f5f3">
                             <span id="changeLabel">Kembalian</span>
                             <strong id="changeVal">Rp 0</strong>
                         </div>
                     </div>
 
                     <div id="boxQris" class="text-center d-none">
-                        <img src="{{ asset('images/qris.png') }}" class="img-fluid rounded border" style="max-height:340px"
-                            onerror="this.outerHTML='<div class=&quot;alert alert-warning&quot;>Gambar QRIS belum dipasang.<br>Taruh file di <code>public/images/qris.png</code></div>'">
+                        <img id="qrisImg" src="{{ $qrisUrl }}" class="img-fluid rounded border" style="max-height:340px" alt="QRIS">
                         <div class="text-muted small mt-2">Pastikan pembayaran sudah masuk sebelum menyimpan.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-success btn-lg w-100" id="btnSimpan"><i class="bi bi-printer me-1"></i>Simpan & Cetak</button>
+                    <button class="btn btn-brand btn-lg w-100" id="btnSimpan"><i class="bi bi-printer me-1"></i>Simpan dan cetak</button>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Pop-up sukses --}}
-    <div class="modal fade" id="doneModal" tabindex="-1" data-bs-backdrop="static">
+    {{-- Jendela sukses --}}
+    <div class="modal fade" id="doneModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content text-center p-3">
                 <i class="bi bi-check-circle-fill text-success" style="font-size:3rem"></i>
-                <h5 class="mt-2">Transaksi Tersimpan</h5>
+                <h2 class="h6 fw-semibold mt-2">Transaksi tersimpan</h2>
                 <div class="text-muted small" id="doneInvoice"></div>
                 <div class="mt-3" id="doneChangeBox">
-                    <div class="text-muted">Kembalian</div>
+                    <div class="text-muted small">Kembalian</div>
                     <div class="display-6 fw-bold" id="doneChange"></div>
                 </div>
-                <button class="btn btn-outline-secondary mt-3" onclick="reprint()"><i class="bi bi-printer me-1"></i>Cetak Ulang</button>
-                <button class="btn btn-success mt-2" data-bs-dismiss="modal">Pesanan Baru</button>
+                <button class="btn btn-outline-secondary mt-3" id="btnReprint"><i class="bi bi-printer me-1"></i>Cetak ulang</button>
+                <button class="btn btn-brand mt-2" data-bs-dismiss="modal">Pesanan baru</button>
             </div>
         </div>
     </div>
 
-    <iframe id="printFrame" style="position:absolute;width:0;height:0;border:0"></iframe>
+    <iframe id="printFrame" title="Cetak struk" style="position:absolute;width:0;height:0;border:0"></iframe>
+
+    @php
+    $posData = [
+    'products' => $products,
+    'categories' => $categories,
+    'taxEnabled' => $taxEnabled,
+    'taxRate' => $taxRate,
+    ];
+    @endphp
+    <script type="application/json" id="pos-data">
+        @json($posData)
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const PRODUCTS = @json($products);
-        const CATS = @json($categories);
-        const TAX_ENABLED = @json($taxEnabled);
-        const TAX_RATE = @json($taxRate);
+        var DATA = JSON.parse(document.getElementById('pos-data').textContent);
+        var PRODUCTS = DATA.products;
+        var CATS = DATA.categories;
+        var TAX_ENABLED = DATA.taxEnabled;
+        var TAX_RATE = DATA.taxRate;
 
-        const rp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
-        const esc = s => String(s).replace(/[&<>"']/g, c => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        } [c]));
-        const $ = id => document.getElementById(id);
+        function $(id) {
+            return document.getElementById(id);
+        }
 
-        let cart = []; // [{key, product, options, qty}]
-        let activeCat = 'all';
-        let pending = null; // {p, editIndex}
-        const optModal = new bootstrap.Modal($('optModal'));
+        function rp(n) {
+            return 'Rp ' + Number(n).toLocaleString('id-ID');
+        }
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, function(c) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                } [c];
+            });
+        }
+
+        var cart = []; // {key, product, options, qty}
+        var activeCat = 'all';
+        var pending = null; // {p, editIndex}
+        var payTotal = 0;
+        var lastStrukUrl = '';
+
+        var optModal = new bootstrap.Modal($('optModal'));
+        var payModal = new bootstrap.Modal($('payModal'));
+        var doneModal = new bootstrap.Modal($('doneModal'));
 
         /* ---------- Katalog ---------- */
         function renderTabs() {
-            const tabs = [{
+            var tabs = [{
                 id: 'all',
-                name: 'Semua Menu'
-            }, ...CATS];
-            $('catTabs').innerHTML = tabs.map(c =>
-                `<button class="btn btn-sm me-1 ${String(c.id) === String(activeCat) ? 'btn-success' : 'btn-outline-success'}"
-               onclick="setCat('${c.id}')">${esc(c.name)}</button>`).join('');
-        }
-
-        function setCat(id) {
-            activeCat = id;
-            renderTabs();
-            renderMenu();
+                name: 'Semua'
+            }].concat(CATS);
+            $('catTabs').innerHTML = tabs.map(function(c) {
+                return '<button type="button" class="cat-btn ' + (String(c.id) === String(activeCat) ? 'on' : '') +
+                    '" data-cat="' + c.id + '">' + esc(c.name) + '</button>';
+            }).join('');
         }
 
         function renderMenu() {
-            const q = $('search').value.trim().toLowerCase();
-            const list = PRODUCTS.filter(p =>
-                (activeCat === 'all' || String(p.category_id) === String(activeCat)) &&
-                p.name.toLowerCase().includes(q));
+            var q = $('search').value.trim().toLowerCase();
+            var list = PRODUCTS.filter(function(p) {
+                return (activeCat === 'all' || String(p.category_id) === String(activeCat)) &&
+                    p.name.toLowerCase().indexOf(q) !== -1;
+            });
 
-            $('menuGrid').innerHTML = list.length ? list.map(p => `
-      <div class="col">
-        <div class="card menu-card h-100 ${p.is_available ? '' : 'habis'}" onclick="pick(${p.id})">
-          ${p.image ? `<img src="${p.image}" class="menu-img card-img-top">` : `<div class="menu-img bg-secondary-subtle card-img-top"></div>`}
-          <div class="card-body p-2">
-            <div class="fw-semibold small">${esc(p.name)}</div>
-            <div class="text-success small">${rp(p.price)}</div>
-            ${p.is_available ? '' : '<span class="badge text-bg-danger">Habis</span>'}
-          </div>
-        </div>
-      </div>`).join('') : '<div class="text-muted p-3">Menu tidak ditemukan.</div>';
+            $('menuGrid').innerHTML = list.length ? list.map(function(p) {
+                return '<div class="col"><div class="menu-card ' + (p.is_available ? '' : 'habis') + '" data-id="' + p.id + '">' +
+                    '<span class="qty-badge d-none" data-pid="' + p.id + '"></span>' +
+                    (p.image ? '<img src="' + p.image + '" class="menu-img" alt="">' : '<div class="menu-img"></div>') +
+                    '<div class="menu-info"><div class="menu-name">' + esc(p.name) + '</div>' +
+                    '<div class="menu-price">' + rp(p.price) + '</div>' +
+                    (p.is_available ? '' : '<span class="badge text-bg-danger mt-1">Habis</span>') +
+                    '</div></div></div>';
+            }).join('') : '<div class="text-muted p-3">Menu tidak ditemukan.</div>';
+
+            updateBadges();
         }
 
-        /* ---------- Pop-up varian & topping ---------- */
+        function updateBadges() {
+            document.querySelectorAll('.qty-badge').forEach(function(el) {
+                var id = +el.dataset.pid;
+                var n = cart.reduce(function(s, it) {
+                    return s + (it.product.id === id ? it.qty : 0);
+                }, 0);
+                el.textContent = n;
+                el.classList.toggle('d-none', n === 0);
+            });
+        }
+
+        $('catTabs').addEventListener('click', function(e) {
+            var b = e.target.closest('[data-cat]');
+            if (!b) return;
+            activeCat = b.dataset.cat;
+            renderTabs();
+            renderMenu();
+        });
+        $('menuGrid').addEventListener('click', function(e) {
+            var c = e.target.closest('[data-id]');
+            if (c) pick(+c.dataset.id);
+        });
+        $('search').addEventListener('input', renderMenu);
+
+        /* ---------- Varian dan topping ---------- */
         function pick(id) {
-            const p = PRODUCTS.find(x => x.id === id);
+            var p = PRODUCTS.find(function(x) {
+                return x.id === id;
+            });
             if (!p || !p.is_available) return;
             if (p.options.length === 0) {
                 addToCart(p, []);
@@ -311,72 +529,176 @@
 
         function openModal(p, selected, editIndex) {
             pending = {
-                p,
-                editIndex
+                p: p,
+                editIndex: editIndex
             };
-            const v = p.options.filter(o => o.type === 'varian');
-            const t = p.options.filter(o => o.type === 'topping');
-            const hasSel = v.some(o => selected.includes(o.id));
-            let h = '';
+            var v = p.options.filter(function(o) {
+                return o.type === 'varian';
+            });
+            var t = p.options.filter(function(o) {
+                return o.type === 'topping';
+            });
+            var hasSel = v.some(function(o) {
+                return selected.indexOf(o.id) !== -1;
+            });
+            var h = '';
 
             if (v.length) {
-                h += '<div class="fw-semibold mb-1">Varian (pilih satu)</div>';
-                h += v.map((o, i) => `
-        <div class="form-check mb-1">
-          <input class="form-check-input" type="radio" name="varian" id="o${o.id}" value="${o.id}"
-                 ${(hasSel ? selected.includes(o.id) : i === 0) ? 'checked' : ''}>
-          <label class="form-check-label" for="o${o.id}">${esc(o.name)}</label>
-        </div>`).join('');
+                h += '<div class="fw-semibold mb-1">Varian <span class="text-muted fw-normal small">(pilih satu)</span></div>';
+                h += v.map(function(o, i) {
+                    var on = hasSel ? selected.indexOf(o.id) !== -1 : i === 0;
+                    return '<div class="form-check mb-1"><input class="form-check-input" type="radio" name="varian" id="o' + o.id +
+                        '" value="' + o.id + '" ' + (on ? 'checked' : '') + '><label class="form-check-label" for="o' + o.id + '">' +
+                        esc(o.name) + '</label></div>';
+                }).join('');
             }
             if (t.length) {
-                h += `<div class="fw-semibold mb-1 ${v.length ? 'mt-3' : ''}">Topping (boleh lebih dari satu)</div>`;
-                h += t.map(o => `
-        <div class="form-check mb-1">
-          <input class="form-check-input" type="checkbox" id="o${o.id}" value="${o.id}" ${selected.includes(o.id) ? 'checked' : ''}>
-          <label class="form-check-label" for="o${o.id}">${esc(o.name)} <small class="text-muted">+${rp(o.price)}</small></label>
-        </div>`).join('');
+                h += '<div class="fw-semibold mb-1 ' + (v.length ? 'mt-3' : '') + '">Topping <span class="text-muted fw-normal small">(boleh lebih dari satu)</span></div>';
+                h += t.map(function(o) {
+                    return '<div class="form-check mb-1"><input class="form-check-input" type="checkbox" id="o' + o.id + '" value="' + o.id + '" ' +
+                        (selected.indexOf(o.id) !== -1 ? 'checked' : '') + '><label class="form-check-label" for="o' + o.id + '">' +
+                        esc(o.name) + ' <small class="text-muted">+' + rp(o.price) + '</small></label></div>';
+                }).join('');
             }
 
             $('optTitle').textContent = p.name;
             $('optBody').innerHTML = h;
-            $('optSave').textContent = editIndex === null ? 'Tambah ke keranjang' : 'Simpan perubahan';
+            $('optSave').textContent = editIndex === null ? 'Tambah ke pesanan' : 'Simpan perubahan';
             optModal.show();
         }
 
-        $('optSave').addEventListener('click', () => {
-            const ids = [...$('optBody').querySelectorAll('input:checked')].map(i => +i.value);
-            const opts = pending.p.options.filter(o => ids.includes(o.id));
+        $('optSave').addEventListener('click', function() {
+            var ids = Array.prototype.map.call($('optBody').querySelectorAll('input:checked'), function(i) {
+                return +i.value;
+            });
+            var opts = pending.p.options.filter(function(o) {
+                return ids.indexOf(o.id) !== -1;
+            });
             if (pending.editIndex === null) addToCart(pending.p, opts);
             else updateItem(pending.editIndex, opts);
             optModal.hide();
         });
 
         /* ---------- Keranjang ---------- */
-        const keyOf = (p, opts) => p.id + ':' + opts.map(o => o.id).sort((a, b) => a - b).join(',');
-        const unitPrice = it => it.product.price + it.options.reduce((s, o) => s + o.price, 0);
+        function keyOf(p, opts) {
+            return p.id + ':' + opts.map(function(o) {
+                return o.id;
+            }).sort(function(a, b) {
+                return a - b;
+            }).join(',');
+        }
 
+        function unitPrice(it) {
+            return it.product.price + it.options.reduce(function(s, o) {
+                return s + o.price;
+            }, 0);
+        }
+
+        function addToCart(p, opts) {
+            var key = keyOf(p, opts);
+            var found = cart.find(function(c) {
+                return c.key === key;
+            });
+            if (found) found.qty++;
+            else cart.push({
+                key: key,
+                product: p,
+                options: opts,
+                qty: 1
+            });
+            renderCart();
+        }
+
+        function updateItem(i, opts) {
+            var it = cart[i];
+            it.options = opts;
+            it.key = keyOf(it.product, opts);
+            var dup = cart.findIndex(function(c, j) {
+                return j !== i && c.key === it.key;
+            });
+            if (dup >= 0) {
+                cart[dup].qty += it.qty;
+                cart.splice(i, 1);
+            }
+            renderCart();
+        }
+
+        $('cartList').addEventListener('click', function(e) {
+            var b = e.target.closest('[data-act]');
+            if (!b) return;
+            var i = +b.dataset.i;
+            var act = b.dataset.act;
+            if (act === 'plus') cart[i].qty++;
+            else if (act === 'minus') {
+                cart[i].qty--;
+                if (cart[i].qty <= 0) cart.splice(i, 1);
+            } else if (act === 'del') cart.splice(i, 1);
+            else if (act === 'edit') {
+                openModal(cart[i].product, cart[i].options.map(function(o) {
+                    return o.id;
+                }), i);
+                return;
+            }
+            renderCart();
+        });
+
+        $('btnClear').addEventListener('click', function() {
+            if (cart.length && confirm('Kosongkan semua pesanan?')) {
+                cart = [];
+                renderCart();
+            }
+        });
+
+        function renderCart() {
+            $('cartList').innerHTML = cart.length ? cart.map(function(it, i) {
+                return '<div class="cart-item">' +
+                    '<div class="d-flex justify-content-between gap-2"><div class="fw-semibold">' + esc(it.product.name) + '</div>' +
+                    '<div class="fw-semibold text-nowrap">' + rp(unitPrice(it) * it.qty) + '</div></div>' +
+                    (it.options.length ? '<div class="small text-muted">' + it.options.map(function(o) {
+                        return esc(o.name);
+                    }).join(', ') + '</div>' : '') +
+                    '<div class="d-flex justify-content-between align-items-center mt-2">' +
+                    '<div class="small text-muted">' + rp(unitPrice(it)) + ' / porsi</div>' +
+                    '<div class="qty-ctl d-flex align-items-center gap-1">' +
+                    '<button class="btn btn-outline-secondary" data-act="minus" data-i="' + i + '" aria-label="Kurangi"><i class="bi bi-dash"></i></button>' +
+                    '<span class="px-2 fw-bold">' + it.qty + '</span>' +
+                    '<button class="btn btn-outline-secondary" data-act="plus" data-i="' + i + '" aria-label="Tambah"><i class="bi bi-plus"></i></button>' +
+                    (it.product.options.length ? '<button class="btn btn-outline-success ms-1" data-act="edit" data-i="' + i + '" aria-label="Ubah pilihan"><i class="bi bi-pencil"></i></button>' : '') +
+                    '<button class="btn btn-outline-danger" data-act="del" data-i="' + i + '" aria-label="Hapus"><i class="bi bi-trash"></i></button>' +
+                    '</div></div></div>';
+            }).join('') : '<div class="text-center text-muted py-5"><i class="bi bi-basket fs-1 d-block mb-2"></i>Belum ada pesanan.<br>Pilih menu di sebelah kiri.</div>';
+
+            updateTotals();
+            updateBadges();
+        }
+
+        /* ---------- Total, diskon, PPN ---------- */
         function calc() {
-            const sub = cart.reduce((s, it) => s + unitPrice(it) * it.qty, 0);
-            const type = $('discType').value;
-            let val = Math.max(0, +$('discValue').value || 0);
+            var sub = cart.reduce(function(s, it) {
+                return s + unitPrice(it) * it.qty;
+            }, 0);
+            var type = $('discType').value;
+            var val = Math.max(0, +$('discValue').value || 0);
             if (type === 'percent') val = Math.min(val, 100);
 
-            let disc = type === 'percent' ? Math.round(sub * val / 100) : Math.round(val);
+            var disc = type === 'percent' ? Math.round(sub * val / 100) : Math.round(val);
             disc = Math.min(disc, sub);
 
-            const base = sub - disc;
-            const tax = TAX_ENABLED ? Math.round(base * TAX_RATE / 100) : 0;
+            var base = sub - disc;
+            var tax = TAX_ENABLED ? Math.round(base * TAX_RATE / 100) : 0;
             return {
-                sub,
-                disc,
-                tax,
+                sub: sub,
+                disc: disc,
+                tax: tax,
                 total: base + tax
             };
         }
 
         function updateTotals() {
-            const c = calc();
-            const qty = cart.reduce((s, it) => s + it.qty, 0);
+            var c = calc();
+            var qty = cart.reduce(function(s, it) {
+                return s + it.qty;
+            }, 0);
             $('subtotal').textContent = rp(c.sub);
             $('rowDisc').classList.toggle('d-none', c.disc <= 0);
             $('discAmt').textContent = '- ' + rp(c.disc);
@@ -386,193 +708,139 @@
             $('grandTotal').textContent = rp(c.total);
             $('badgeTotal').textContent = rp(c.total);
             $('badgeQty').textContent = qty;
+            $('cartCount').textContent = qty ? '(' + qty + ' porsi)' : '';
         }
         $('discType').addEventListener('change', updateTotals);
         $('discValue').addEventListener('input', updateTotals);
 
-        function addToCart(p, opts) {
-            const key = keyOf(p, opts);
-            const found = cart.find(c => c.key === key);
-            if (found) found.qty++;
-            else cart.push({
-                key,
-                product: p,
-                options: opts,
-                qty: 1
-            });
-            renderCart();
-        }
-
-        function updateItem(i, opts) {
-            const it = cart[i];
-            it.options = opts;
-            it.key = keyOf(it.product, opts);
-            const dup = cart.findIndex((c, j) => j !== i && c.key === it.key);
-            if (dup >= 0) {
-                cart[dup].qty += it.qty;
-                cart.splice(i, 1);
-            }
-            renderCart();
-        }
-
-        function chg(i, d) {
-            cart[i].qty += d;
-            if (cart[i].qty <= 0) cart.splice(i, 1);
-            renderCart();
-        }
-
-        function del(i) {
-            cart.splice(i, 1);
-            renderCart();
-        }
-
-        function editItem(i) {
-            openModal(cart[i].product, cart[i].options.map(o => o.id), i);
-        }
-
-        function clearCart() {
-            if (cart.length && confirm('Kosongkan semua pesanan?')) {
-                cart = [];
-                renderCart();
-            }
-        }
-
-        function renderCart() {
-            $('cartList').innerHTML = cart.length ? cart.map((it, i) => `
-      <div class="py-2 border-bottom">
-        <div class="d-flex justify-content-between">
-          <div class="fw-semibold">${esc(it.product.name)}</div>
-          <div class="fw-semibold">${rp(unitPrice(it) * it.qty)}</div>
-        </div>
-        ${it.options.length ? `<div class="small text-muted">${it.options.map(o => esc(o.name)).join(', ')}</div>` : ''}
-        <div class="d-flex justify-content-between align-items-center mt-1">
-          <div class="small text-muted">${rp(unitPrice(it))} / porsi</div>
-          <div class="d-flex align-items-center gap-1">
-            <button class="btn btn-sm btn-outline-secondary" onclick="chg(${i},-1)"><i class="bi bi-dash"></i></button>
-            <span class="px-2 fw-bold">${it.qty}</span>
-            <button class="btn btn-sm btn-outline-secondary" onclick="chg(${i},1)"><i class="bi bi-plus"></i></button>
-            ${it.product.options.length ? `<button class="btn btn-sm btn-outline-primary ms-1" onclick="editItem(${i})"><i class="bi bi-pencil"></i></button>` : ''}
-            <button class="btn btn-sm btn-outline-danger" onclick="del(${i})"><i class="bi bi-trash"></i></button>
-          </div>
-        </div>
-      </div>`).join('') : '<div class="text-center text-muted py-5">Belum ada pesanan.<br>Klik menu untuk menambah.</div>';
-
-            updateTotals();
-        }
-
         /* ---------- Tipe pesanan ---------- */
+        function orderType() {
+            return document.querySelector('input[name=order_type]:checked').value;
+        }
+
         function syncType() {
-            const dine = document.querySelector('input[name=order_type]:checked').value === 'dine_in';
-            $('tableNo').style.display = dine ? '' : 'none';
+            $('tableNo').style.display = orderType() === 'dine_in' ? '' : 'none';
         }
-        document.querySelectorAll('input[name=order_type]').forEach(r => r.addEventListener('change', syncType));
+        document.querySelectorAll('input[name=order_type]').forEach(function(r) {
+            r.addEventListener('change', syncType);
+        });
 
-        /* ---------- Bayar (sementara, dilengkapi di tahap 5b) ---------- */
         /* ---------- Pembayaran ---------- */
-        let payTotal = 0;
-        let lastStrukUrl = '';
-        const payModal = new bootstrap.Modal($('payModal'));
-        const doneModal = new bootstrap.Modal($('doneModal'));
-        const getMethod = () => document.querySelector('input[name=pay_method]:checked').value;
-
-        function cartTotal() {
-            return cart.reduce((s, it) => s + unitPrice(it) * it.qty, 0);
+        function payMethod() {
+            return document.querySelector('input[name=pay_method]:checked').value;
         }
 
-        function bayar() {
-            if (!cart.length) return alert('Keranjang masih kosong.');
-            const dine = document.querySelector('input[name=order_type]:checked').value === 'dine_in';
-            if (dine && !$('tableNo').value.trim()) return alert('Nomor meja wajib diisi untuk Makan di Sini.');
+        $('btnBayar').addEventListener('click', function() {
+            if (!cart.length) return alert('Pesanan masih kosong.');
+            if (orderType() === 'dine_in' && !$('tableNo').value.trim()) return alert('Nomor meja wajib diisi untuk makan di sini.');
 
             payTotal = calc().total;
-            $('payTotal').textContent = rp(payTotal);
+            $('payTotalText').textContent = rp(payTotal);
             $('cashIn').value = '';
             $('mTunai').checked = true;
             syncPay();
-            bootstrap.Offcanvas.getInstance($('cartPanel'))?.hide();
-            payModal.show();
-        }
 
-        function setCash(n) {
-            $('cashIn').value = n;
-            syncPay();
-        }
+            var panel = bootstrap.Offcanvas.getInstance($('cartPanel'));
+            if (panel) panel.hide();
+            payModal.show();
+        });
 
         function syncPay() {
-            const tunai = getMethod() === 'tunai';
+            var tunai = payMethod() === 'tunai';
             $('boxTunai').classList.toggle('d-none', !tunai);
             $('boxQris').classList.toggle('d-none', tunai);
 
-            const diff = (+$('cashIn').value || 0) - payTotal;
+            var diff = (+$('cashIn').value || 0) - payTotal;
             $('changeLabel').textContent = diff < 0 ? 'Kurang' : 'Kembalian';
             $('changeVal').textContent = rp(Math.abs(diff));
             $('changeVal').className = diff < 0 ? 'text-danger' : 'text-success';
         }
-        document.querySelectorAll('input[name=pay_method]').forEach(r => r.addEventListener('change', syncPay));
+        document.querySelectorAll('input[name=pay_method]').forEach(function(r) {
+            r.addEventListener('change', syncPay);
+        });
         $('cashIn').addEventListener('input', syncPay);
 
-        $('btnSimpan').addEventListener('click', async () => {
-            const method = getMethod();
-            const cash = +$('cashIn').value || 0;
+        document.querySelectorAll('[data-cash]').forEach(function(b) {
+            b.addEventListener('click', function() {
+                $('cashIn').value = b.dataset.cash === 'pas' ? payTotal : b.dataset.cash;
+                syncPay();
+            });
+        });
+
+        $('qrisImg').addEventListener('error', function() {
+            this.outerHTML = '<div class="alert alert-warning">Gambar QRIS belum dipasang.<br>Unggah di menu Pengaturan.</div>';
+        });
+
+        $('btnSimpan').addEventListener('click', function() {
+            var method = payMethod();
+            var cash = +$('cashIn').value || 0;
             if (method === 'tunai' && cash < payTotal) return alert('Uang diterima masih kurang.');
 
-            const btn = $('btnSimpan');
+            var btn = $('btnSimpan');
             btn.disabled = true;
 
-            try {
-                const res = await fetch('{{ url(' / kasir / order ') }}', {
+            fetch(document.querySelector('meta[name=order-url]').content, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
                     },
                     body: JSON.stringify({
-                        order_type: document.querySelector('input[name=order_type]:checked').value,
+                        order_type: orderType(),
                         table_number: $('tableNo').value.trim(),
                         note: $('orderNote').value.trim(),
-                        discount_type: $('discType').value,
-                        discount_value: +$('discValue').value || 0,
                         payment_method: method,
                         cash_received: method === 'tunai' ? cash : null,
-                        items: cart.map(it => ({
-                            product_id: it.product.id,
-                            qty: it.qty,
-                            option_ids: it.options.map(o => o.id),
-                        })),
-                    }),
+                        discount_type: $('discType').value,
+                        discount_value: +$('discValue').value || 0,
+                        items: cart.map(function(it) {
+                            return {
+                                product_id: it.product.id,
+                                qty: it.qty,
+                                option_ids: it.options.map(function(o) {
+                                    return o.id;
+                                })
+                            };
+                        })
+                    })
+                })
+                .then(function(res) {
+                    return res.json().then(function(data) {
+                        if (!res.ok) throw new Error(data.message || 'Gagal menyimpan transaksi.');
+                        return data;
+                    });
+                })
+                .then(function(data) {
+                    payModal.hide();
+                    lastStrukUrl = data.struk_url;
+                    $('doneInvoice').textContent = data.invoice_no + ' | ' + rp(data.total);
+                    $('doneChangeBox').classList.toggle('d-none', data.change === null);
+                    if (data.change !== null) $('doneChange').textContent = rp(data.change);
+                    doneModal.show();
+
+                    cart = [];
+                    $('tableNo').value = '';
+                    $('orderNote').value = '';
+                    $('discValue').value = '';
+                    $('discType').value = 'nominal';
+                    renderCart();
+                    reprint();
+                })
+                .catch(function(err) {
+                    alert(err.message);
+                })
+                .then(function() {
+                    btn.disabled = false;
                 });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || 'Gagal menyimpan transaksi.');
-
-                // Berhasil
-                payModal.hide();
-                lastStrukUrl = data.struk_url;
-                $('doneInvoice').textContent = data.invoice_no + ' · ' + rp(data.total);
-                $('doneChangeBox').classList.toggle('d-none', data.change === null);
-                if (data.change !== null) $('doneChange').textContent = rp(data.change);
-                doneModal.show();
-
-                cart = [];
-                $('tableNo').value = '';
-                $('orderNote').value = '';
-                $('discValue').value = '';
-                $('discType').value = 'nominal';
-                renderCart();
-                reprint();
-            } catch (e) {
-                alert(e.message);
-            } finally {
-                btn.disabled = false;
-            }
         });
 
         function reprint() {
             if (lastStrukUrl) $('printFrame').src = lastStrukUrl + '?print=1&t=' + Date.now();
         }
+        $('btnReprint').addEventListener('click', reprint);
 
-        $('search').addEventListener('input', renderMenu);
+        /* ---------- Mulai ---------- */
         renderTabs();
         renderMenu();
         renderCart();

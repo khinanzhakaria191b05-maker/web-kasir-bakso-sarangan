@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\User;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
@@ -41,6 +42,19 @@ class TransactionController extends Controller
         $order->load('items', 'user', 'voidedBy');
 
         return view('admin.transactions.show', compact('order'));
+    }
+
+    public function pdf(Order $order)
+    {
+        $order->load('items', 'user', 'voidedBy');
+
+        // Kertas selebar 80mm, tingginya menyesuaikan isi struk
+        $optCount = $order->items->sum(fn($i) => count($i->options ?? []));
+        $height = 380 + $order->items->count() * 52 + $optCount * 14;
+
+        return Pdf::loadView('admin.transactions.pdf', compact('order'))
+            ->setPaper([0, 0, 226.77, $height], 'portrait')
+            ->download('struk-' . $order->invoice_no . '.pdf');
     }
 
     public function void(Request $request, Order $order)

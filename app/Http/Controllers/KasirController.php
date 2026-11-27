@@ -30,6 +30,10 @@ class KasirController extends Controller
         $taxEnabled = Setting::get('tax_enabled', '0') === '1';
         $taxRate    = (float) Setting::get('tax_rate', 11);
 
-        return view('kasir.index', compact('categories', 'products', 'taxEnabled', 'taxRate'));
+        // Gambar QRIS dari menu Pengaturan; kalau belum ada, pakai file cadangan
+        $qris    = Setting::get('qris_image');
+        $qrisUrl = $qris ? asset('storage/' . $qris) : asset('images/qris.png');
+
+        return view('kasir.index', compact('categories', 'products', 'taxEnabled', 'taxRate', 'qrisUrl'));
     }
 }

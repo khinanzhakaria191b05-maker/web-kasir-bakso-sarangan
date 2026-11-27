@@ -12,10 +12,14 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::orderBy('role')->orderBy('name')->get();
-        return view('admin.users.index', compact('users'));
-    }
+        $users = User::orderBy('role')->orderBy('name')->paginate(10);
 
+        return view('admin.users.index', [
+            'users' => $users,
+            'total' => User::count(),
+            'aktif' => User::where('is_active', true)->count(),
+        ]);
+    }
     public function create()
     {
         return view('admin.users.form', ['user' => new User()]);

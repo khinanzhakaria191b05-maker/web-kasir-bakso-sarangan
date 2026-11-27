@@ -8,14 +8,19 @@ use Illuminate\Http\Request;
 
 class ProductOptionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $options = ProductOption::withCount('products')
+            ->when(in_array($request->type, ['varian', 'topping']), fn($q) => $q->where('type', $request->type))
             ->orderBy('type')
             ->orderBy('name')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('admin.options.index', compact('options'));
+        return view('admin.options.index', [
+            'options' => $options,
+            'jumlah'  => ProductOption::selectRaw('type, count(*) as n')->groupBy('type')->pluck('n', 'type'),
+        ]);
     }
 
     public function store(Request $request)
